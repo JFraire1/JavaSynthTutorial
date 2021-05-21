@@ -1,12 +1,17 @@
 package com.JoseFraireJr.synth;
 
+import com.JoseFraireJr.synth.utils.Utils;
+
 import javax.swing.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.util.HashMap;
 
 public class Synthesizer {
+
+    private static HashMap<Character, Double> KEY_FREQUENCIES = new HashMap<>();
     private boolean shouldGenerate;
 
     private final Oscillator[] oscillators =  new Oscillator[3];
@@ -31,16 +36,27 @@ public class Synthesizer {
         @Override
         public void keyPressed(KeyEvent e) {
             if (!audioThread.isRunning()){
+                for (Oscillator o : oscillators){
+                    o.setKeyFrequency(KEY_FREQUENCIES.get(e.getKeyChar()));
+                }
                 shouldGenerate = true;
                 audioThread.triggerPlayback();
             }
         }
-
-   @Override
-   public void keyReleased(KeyEvent e) {
+        @Override
+        public void keyReleased(KeyEvent e) {
             shouldGenerate = false;
         }
     };
+
+   static{
+       final int STARTING_KEY = 16;
+       final int KEY_FREQUENCY_INCREMENT = 2;
+       final char[] KEYS = "zxcvbnm,./asdfghjkl;'qwertyuiop[]".toCharArray();
+       for (int i=STARTING_KEY, key=0; i<KEYS.length * KEY_FREQUENCY_INCREMENT + STARTING_KEY;i+=KEY_FREQUENCY_INCREMENT, key++){
+            KEY_FREQUENCIES.put(KEYS[key], Utils.Math.getKeyFrequency(i));
+       }
+   }
 
     Synthesizer(){
         int y = 0;
