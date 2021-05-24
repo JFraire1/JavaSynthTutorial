@@ -25,7 +25,7 @@ public class Synthesizer {
         for (int i=0;i<AudioThread.BUFFER_SIZE;i++){
            double d = 0;
            for (Oscillator o : oscillators){
-               d += o.nextSample() / oscillators.length;
+               d += o.getNextSample() / oscillators.length;
            }
            s[i] = (short)(Short.MAX_VALUE * d);
         }
@@ -35,6 +35,7 @@ public class Synthesizer {
     private final KeyAdapter keyAdapter = new KeyAdapter(){
         @Override
         public void keyPressed(KeyEvent e) {
+            if (!KEY_FREQUENCIES.containsKey(e.getKeyChar())) return;
             if (!audioThread.isRunning()){
                 for (Oscillator o : oscillators){
                     o.setKeyFrequency(KEY_FREQUENCIES.get(e.getKeyChar()));
@@ -51,7 +52,7 @@ public class Synthesizer {
 
    static{
        final int STARTING_KEY = 16;
-       final int KEY_FREQUENCY_INCREMENT = 2;
+       final int KEY_FREQUENCY_INCREMENT = 1;
        final char[] KEYS = "zxcvbnm,./asdfghjkl;'qwertyuiop[]".toCharArray();
        for (int i=STARTING_KEY, key=0; i<KEYS.length * KEY_FREQUENCY_INCREMENT + STARTING_KEY;i+=KEY_FREQUENCY_INCREMENT, key++){
             KEY_FREQUENCIES.put(KEYS[key], Utils.Math.getKeyFrequency(i));
