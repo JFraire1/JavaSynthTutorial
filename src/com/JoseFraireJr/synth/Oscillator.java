@@ -1,13 +1,10 @@
 package com.JoseFraireJr.synth;
 
+import com.JoseFraireJr.synth.utils.RefWrapper;
 import com.JoseFraireJr.synth.utils.Utils;
 
 import javax.swing.*;
-import java.awt.*;
 import java.awt.event.ItemEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.image.BufferedImage;
 
 public class Oscillator extends SynthControlContainer {
 
@@ -17,7 +14,8 @@ public class Oscillator extends SynthControlContainer {
     private int wavetableStepSize;
     private int wavetableIndex;
     private double keyFrequency;
-    public int toneOffset;
+    private RefWrapper<Integer> toneOffset = new RefWrapper<>(0);
+    private RefWrapper<Integer> volume = new RefWrapper<>(100);
 
     public Oscillator(Synthesizer synth){
         super(synth);
@@ -31,41 +29,18 @@ public class Oscillator extends SynthControlContainer {
             }
         });
         add(comboBox);
-        JLabel toneParameter = new JLabel("x0");
+        JLabel toneParameter = new JLabel("x0.0");
         toneParameter.setBounds(177, 65, 30, 25);
         toneParameter.setBorder(Utils.WindowDesign.LINE_BORDER);
-        toneParameter.addMouseListener(new MouseAdapter(){
-            @Override
-            public void mousePressed(MouseEvent e){
-                final Cursor BLANK_CURSOR = Toolkit.getDefaultToolkit().createCustomCursor(new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB),
-                        new Point(0,0), "blank_cursor");
-                setCursor(BLANK_CURSOR);
-                mouseClickLocation = e.getLocationOnScreen();
-            }
-            @Override
-            public void mouseReleased(MouseEvent e){
-                setCursor(Cursor.getDefaultCursor());
-                toneOffset = 0;
-                applyToneOffset();
-                toneParameter.setText("x" + toneOffset);
-            }
-        });
-        toneParameter.addMouseMotionListener(new MouseAdapter() {
-            @Override
-            public void mouseDragged(MouseEvent e) {
-                if (mouseClickLocation.y != e.getYOnScreen()){
-                    boolean mouseMovingUp = mouseClickLocation.y - e.getYOnScreen() > 0;
-                    if(mouseMovingUp && toneOffset < TONE_OFFSET_LIMIT){
-                        ++toneOffset;
-                    }
-                    else if (!mouseMovingUp && toneOffset > -TONE_OFFSET_LIMIT){
-                        --toneOffset;
-                    }
+        Utils.ParameterHandling.addParameterMouseListeners(toneParameter, this, -TONE_OFFSET_LIMIT, TONE_OFFSET_LIMIT, 1, toneOffset, () ->
+                {
                     applyToneOffset();
-                    toneParameter.setText("x" + toneOffset);
-                }
-                Utils.ParameterHandling.PARAMETER_ROBOT.mouseMove(mouseClickLocation.x, mouseClickLocation.y);
-            }
+                    toneParameter.setText("x" + toneOffset.val/10.0);
+                    },
+                ()->{
+            toneOffset.val = 0;
+            applyToneOffset();
+            toneParameter.setText("x" + toneOffset.val/10.0);
         });
         add(toneParameter);
         JLabel toneText = new JLabel("Vibrato");
@@ -73,6 +48,15 @@ public class Oscillator extends SynthControlContainer {
         add(toneText);
         setSize(279, 100);
         setBorder(Utils.WindowDesign.LINE_BORDER);
+        JLabel volumeParameter = new JLabel(" 100%");
+        volumeParameter.setBounds(222, 65, 50, 25);
+        volumeParameter.setBorder(Utils.WindowDesign.LINE_BORDER);
+        Utils.ParameterHandling.addParameterMouseListeners(volumeParameter, this, 0,100, 1,  volume, () ->
+            {volumeParameter.setText(" " + volume.val + "%");},()->{});
+        JLabel volumeText = new JLabel("Volume");
+        volumeText.setBounds(225, 40, 75, 25);
+        add(volumeParameter);
+        add(volumeText);
         setLayout(null);
     }
 
@@ -82,11 +66,15 @@ public class Oscillator extends SynthControlContainer {
     }
 
     private double getToneOffset(){
-        return toneOffset / 100d;
+        return toneOffset.val / 100d;
+    }
+
+    private double getVolumeMultiplier(){
+        return volume.val / 100.0;
     }
 
     public double getNextSample(){
-        double sample = wavetable.getSamples()[wavetableIndex];
+        double sample = wavetable.getSamples()[wavetableIndex] * getVolumeMultiplier();
         wavetableIndex = (wavetableIndex + wavetableStepSize) % Wavetable.SIZE;
         return sample;
     }
