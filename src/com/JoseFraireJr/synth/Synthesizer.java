@@ -13,6 +13,10 @@ public class Synthesizer {
 
     private static HashMap<Character, Double> KEY_FREQUENCIES = new HashMap<>();
     private boolean shouldGenerate;
+    private int startingKey;
+    private final int KEY_FREQUENCY_INCREMENT = 1;
+    private final char[] octaveSelect = "-+".toCharArray();
+    private final char[] KEYS = "zxcvbnm,./asdfghjkl;'qwertyuiop[]".toCharArray();
 
     private final Oscillator[] oscillators =  new Oscillator[3];
     private final JFrame frame = new JFrame("Synthesizer");
@@ -35,6 +39,14 @@ public class Synthesizer {
     private final KeyAdapter keyAdapter = new KeyAdapter(){
         @Override
         public void keyPressed(KeyEvent e) {
+            if (e.getKeyChar() == '-'){
+                setStartingKey(-1);
+                setKeys();
+            }
+            else if (e.getKeyChar() == '='){
+                setStartingKey(1);
+                setKeys();
+            }
             if (!KEY_FREQUENCIES.containsKey(e.getKeyChar())) return;
             if (!audioThread.isRunning()){
                 for (Oscillator o : oscillators){
@@ -50,16 +62,25 @@ public class Synthesizer {
         }
     };
 
-   static{
-       final int STARTING_KEY = 16;
-       final int KEY_FREQUENCY_INCREMENT = 1;
-       final char[] KEYS = "zxcvbnm,./asdfghjkl;'qwertyuiop[]".toCharArray();
-       for (int i=STARTING_KEY, key=0; i<KEYS.length * KEY_FREQUENCY_INCREMENT + STARTING_KEY;i+=KEY_FREQUENCY_INCREMENT, key++){
+    void setStartingKey(int upDown){
+        if(upDown > 0){
+            startingKey += 12;
+        }
+        else{
+            startingKey -= 12;
+        }
+    }
+
+    void setKeys() {
+        KEY_FREQUENCIES.clear();
+        for (int i = startingKey, key = 0; i < KEYS.length * KEY_FREQUENCY_INCREMENT + startingKey; i += KEY_FREQUENCY_INCREMENT, key++) {
             KEY_FREQUENCIES.put(KEYS[key], Utils.Math.getKeyFrequency(i));
-       }
-   }
+        }
+    }
 
     Synthesizer(){
+        setKeys();
+        startingKey = 16;
         int y = 0;
         for (int i=0;i< oscillators.length;i++){
             oscillators[i] = new Oscillator(this);
