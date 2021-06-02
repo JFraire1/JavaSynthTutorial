@@ -1,5 +1,6 @@
 package com.JoseFraireJr.synth;
 
+import com.JoseFraireJr.synth.utils.RefWrapper;
 import com.JoseFraireJr.synth.utils.Utils;
 
 import javax.swing.*;
@@ -15,11 +16,11 @@ public class Synthesizer {
     private boolean shouldGenerate;
     private int startingKey;
     private final int KEY_FREQUENCY_INCREMENT = 1;
-    private final char[] octaveSelect = "-+".toCharArray();
     private final char[] KEYS = "zxcvbnm,./asdfghjkl;'qwertyuiop[]".toCharArray();
 
     private final Oscillator[] oscillators =  new Oscillator[3];
-    private final JFrame frame = new JFrame("Synthesizer");
+    private final WaveViewer waveViewer = new WaveViewer(oscillators);
+    private RefWrapper<Integer> toneOffset = new RefWrapper<>(0);
     private final AudioThread audioThread = new AudioThread(() ->
     {
         if (!shouldGenerate){
@@ -64,10 +65,16 @@ public class Synthesizer {
 
     void setStartingKey(int upDown){
         if(upDown > 0){
-            startingKey += 12;
+            if (startingKey <= 76){
+                startingKey += 12;
+                System.out.println(startingKey);
+            }
         }
         else{
-            startingKey -= 12;
+            if (startingKey >= 16){
+                startingKey -= 12;
+                System.out.println(startingKey);
+            }
         }
     }
 
@@ -82,12 +89,15 @@ public class Synthesizer {
         setKeys();
         startingKey = 16;
         int y = 0;
-        for (int i=0;i< oscillators.length;i++){
+        JFrame frame = new JFrame("Synthesizer");
+        for (int i = 0; i< oscillators.length; i++){
             oscillators[i] = new Oscillator(this);
             oscillators[i].setLocation(5,y);
             frame.add(oscillators[i]);
             y += 105;
         }
+        waveViewer.setBounds(290, 0, 310,310);
+        frame.add(waveViewer);
         frame.addKeyListener(keyAdapter);
         frame.addWindowListener(new WindowAdapter() {
             @Override
@@ -96,7 +106,7 @@ public class Synthesizer {
             }
         });
         frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        frame.setSize(613, 357);
+        frame.setSize(613, 345);
         frame.setResizable(false);
         frame.setLayout(null);
         frame.setLocationRelativeTo(null);
@@ -105,6 +115,10 @@ public class Synthesizer {
 
     public KeyAdapter getKeyAdapter(){
         return keyAdapter;
+    }
+
+    public void updateWaveviewer(){
+        waveViewer.repaint();
     }
 
     public static class AudioInfo{

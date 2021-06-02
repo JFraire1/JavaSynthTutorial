@@ -85,6 +85,10 @@ public class Utils {
     }
 
     public static class Math{
+        private Math(){}
+        public static double offsetTone(double baseFrequency, double frequencyMultiplier){
+            return baseFrequency * pow(2.0, frequencyMultiplier);
+        }
         public static double frequencyToAngularFrequency(double freq){
             return 2 * PI * freq;
         }
